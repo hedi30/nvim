@@ -1,16 +1,6 @@
 return {
   'stevearc/conform.nvim',
   event = { 'BufWritePre', 'InsertLeave' },
-  cmd = { 'ConformInfo' },
-  keys = {
-    {
-      '<leader>f',
-      function()
-        require('conform').format({ async = true })
-      end,
-      desc = 'Format buffer',
-    },
-  },
   opts = {
     formatters_by_ft = {
       c = { 'clang_format' },

@@ -1,8 +1,7 @@
 -- Custom code snippets for different purposes
 
 -- Prevent LSP from overwriting treesitter color settings
--- https://github.com/NvChad/NvChad/issues/1907
-vim.hl.priorities.semantic_tokens = 95 -- Or any number lower than 100, treesitter's priority level
+vim.hl.priorities.semantic_tokens = 95
 
 -- Appearance of diagnostics
 vim.diagnostic.config {
@@ -67,36 +66,18 @@ vim.api.nvim_create_autocmd('ColorScheme', {
   end,
 })
 
--- Run holb_check.sh on C files (runs from file's directory)
-vim.api.nvim_create_user_command('Holb', function()
-  local file = vim.fn.expand('%:t') -- just the filename
-  local dir = vim.fn.expand('%:p:h') -- directory containing the file
-  if vim.bo.filetype == 'c' then
-    vim.cmd('!cd ' .. vim.fn.shellescape(dir) .. ' && /usr/local/bin/holb_check.sh ' .. vim.fn.shellescape(file))
-  else
-    vim.notify('holb_check.sh only runs on C files', vim.log.levels.WARN)
-  end
-end, { desc = 'Run holb_check.sh on current C file' })
-
--- Keymap to run holb check
-vim.keymap.set('n', '<leader>hc', ':Holb<CR>', { desc = 'Run holb_check.sh' })
-
 -- Format files on leaving insert mode
 vim.api.nvim_create_autocmd('InsertLeave', {
   group = vim.api.nvim_create_augroup('FormatOnNormal', { clear = true }),
   pattern = { '*.c', '*.h', '*.cpp', '*.hpp', '*.cc', '*.rs', '*.py', '*.lua', '*.js', '*.ts', '*.jsx', '*.tsx', '*.svelte', '*.html', '*.css' },
   callback = function()
-    -- Defer formatting to avoid conflicts with LSP requests
     vim.defer_fn(function()
-      -- Skip if we're no longer in normal mode or buffer changed
       if vim.fn.mode() ~= 'n' then
         return
       end
 
       local cursor = vim.api.nvim_win_get_cursor(0)
       local ft = vim.bo.filetype
-
-      -- Save buffer content to restore on formatter failure
       local original_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 
       if ft == 'c' or ft == 'cpp' then
@@ -117,14 +98,12 @@ vim.api.nvim_create_autocmd('InsertLeave', {
         vim.cmd('silent! %!prettier --parser css')
       end
 
-      -- If formatter failed (v:shell_error ~= 0), restore original content
       if vim.v.shell_error ~= 0 then
         vim.api.nvim_buf_set_lines(0, 0, -1, false, original_lines)
         vim.api.nvim_win_set_cursor(0, cursor)
         return
       end
 
-      -- Clamp cursor to valid buffer bounds after formatting
       local line_count = vim.api.nvim_buf_line_count(0)
       local row = math.min(cursor[1], line_count)
       local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
