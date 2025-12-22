@@ -30,12 +30,15 @@ vim.o.splitright = true -- force all vertical splits to go to the right of curre
 vim.o.swapfile = false -- creates a swapfile
 vim.o.smartindent = true -- make indenting smarter again
 vim.o.showmode = false -- we don't need to see things like -- INSERT -- anymore
-vim.o.showtabline = 2 -- always show tabs
+vim.o.showtabline = 0 -- never show tabline
 vim.o.backspace = 'indent,eol,start' -- allow backspace on
 vim.o.pumheight = 10 -- pop up menu height
 vim.o.conceallevel = 0 -- so that `` is visible in markdown files
 vim.o.fileencoding = 'utf-8' -- the encoding written to a file
 vim.o.cmdheight = 1 -- more space in the neovim command line for displaying messages
+vim.o.laststatus = 0 -- disable statusline
+vim.o.ruler = false -- disable line/column number in command line
+vim.o.showcmd = false -- disable showing partial commands
 vim.o.autoindent = true -- copy indent from current line when starting new one
 vim.opt.shortmess:append 'c' -- don't give |ins-completion-menu| messages
 vim.opt.iskeyword:append '-' -- hyphenated words recognized by searches

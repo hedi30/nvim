@@ -16,39 +16,18 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- Import color theme based on environment variable NVIM_THEME
-local default_color_scheme = 'nord'
-local env_var_nvim_theme = os.getenv 'NVIM_THEME' or default_color_scheme
-
--- Define a table of theme modules
-local themes = {
-  nord = 'plugins.themes.nord',
-  onedark = 'plugins.themes.onedark',
-}
-
 -- Setup plugins
 require('lazy').setup({
-  require(themes[env_var_nvim_theme]),
+  require 'plugins.themes.vscode',
   require 'plugins.telescope',
   require 'plugins.treesitter',
   require 'plugins.lsp',
-  require 'plugins.autocompletion',
-  require 'plugins.none-ls',
-  require 'plugins.lualine',
-  require 'plugins.bufferline',
-  require 'plugins.neo-tree',
-  require 'plugins.alpha',
-  require 'plugins.indent-blankline',
   require 'plugins.lazygit',
   require 'plugins.comment',
-  require 'plugins.debug',
-  require 'plugins.gitsigns',
-  require 'plugins.database',
   require 'plugins.misc',
-  require 'plugins.harpoon',
-  require 'plugins.aerial',
-  require 'plugins.vim-tmux-navigator',
-  require 'plugins.copilotchat',
+  require 'plugins.oil',
+  require 'plugins.conform',
+  require 'plugins.persistence',
 }, {
   ui = {
     -- If you have a Nerd Font, set icons to an empty table which will use the

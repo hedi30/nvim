@@ -27,6 +27,14 @@ return {
 
     require('telescope').setup {
       defaults = {
+        layout_strategy = 'center',
+        layout_config = {
+          center = {
+            width = 0.7,
+            height = 0.6,
+            preview_cutoff = 40,
+          },
+        },
         mappings = {
           i = {
             ['<C-k>'] = actions.move_selection_previous, -- move to prev result
@@ -54,12 +62,12 @@ return {
             },
           },
         },
-      },
-      live_grep = {
-        file_ignore_patterns = { 'node_modules', '.git', '.venv' },
-        additional_args = function(_)
-          return { '--hidden' }
-        end,
+        live_grep = {
+          file_ignore_patterns = { 'node_modules', '.git', '.venv' },
+          additional_args = function(_)
+            return { '--hidden', '--sort=path' }
+          end,
+        },
       },
       path_display = {
         filename_first = {

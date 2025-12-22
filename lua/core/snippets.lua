@@ -6,31 +6,20 @@ vim.hl.priorities.semantic_tokens = 95 -- Or any number lower than 100, treesitt
 
 -- Appearance of diagnostics
 vim.diagnostic.config {
-  virtual_text = {
-    prefix = '●',
-    -- Add a custom format function to show error codes
-    format = function(diagnostic)
-      local code = diagnostic.code and string.format('[%s]', diagnostic.code) or ''
-      return string.format('%s %s', code, diagnostic.message)
-    end,
-  },
+  virtual_text = false,
   underline = false,
-  update_in_insert = true,
+  update_in_insert = false,
   float = {
-    source = true, -- Or "if_many"
+    source = true,
   },
   signs = {
     text = {
-      [vim.diagnostic.severity.ERROR] = ' ',
-      [vim.diagnostic.severity.WARN] = ' ',
-      [vim.diagnostic.severity.INFO] = ' ',
+      [vim.diagnostic.severity.ERROR] = ' ',
+      [vim.diagnostic.severity.WARN] = ' ',
+      [vim.diagnostic.severity.INFO] = ' ',
       [vim.diagnostic.severity.HINT] = '󰌵 ',
     },
   },
-  -- Make diagnostic background transparent
-  on_ready = function()
-    vim.cmd 'highlight DiagnosticVirtualText guibg=NONE'
-  end,
 }
 
 -- Highlight on yank
@@ -51,3 +40,73 @@ vim.cmd [[
   au VimEnter * :silent !kitty @ set-spacing padding=0 margin=0 3 0 3
   augroup END
 ]]
+
+-- Winbar: show filename on right, hide for special buffers
+vim.api.nvim_create_autocmd('BufEnter', {
+  callback = function()
+    pcall(function()
+      local exclude_ft = { 'neo-tree', 'notify', 'trouble', 'qf', 'help', 'alpha', 'TelescopePrompt', 'TelescopeResults', '' }
+      local exclude_bt = { 'nofile', 'prompt', 'popup', 'terminal' }
+      if vim.tbl_contains(exclude_ft, vim.bo.filetype) or vim.tbl_contains(exclude_bt, vim.bo.buftype) then
+        vim.opt_local.winbar = nil
+      else
+        vim.opt_local.winbar = '%=%f'
+      end
+    end)
+  end,
+})
+
+-- Make winbar transparent (apply after colorscheme loads)
+vim.api.nvim_create_autocmd('ColorScheme', {
+  callback = function()
+    vim.defer_fn(function()
+      local normal_fg = vim.api.nvim_get_hl(0, { name = 'Normal' }).fg
+      vim.api.nvim_set_hl(0, 'WinBar', { fg = normal_fg, bg = 'NONE', bold = false })
+      vim.api.nvim_set_hl(0, 'WinBarNC', { fg = normal_fg, bg = 'NONE', bold = false })
+    end, 10)
+  end,
+})
+
+-- Run holb_check.sh on C files (runs from file's directory)
+vim.api.nvim_create_user_command('Holb', function()
+  local file = vim.fn.expand('%:t') -- just the filename
+  local dir = vim.fn.expand('%:p:h') -- directory containing the file
+  if vim.bo.filetype == 'c' then
+    vim.cmd('!cd ' .. vim.fn.shellescape(dir) .. ' && /usr/local/bin/holb_check.sh ' .. vim.fn.shellescape(file))
+  else
+    vim.notify('holb_check.sh only runs on C files', vim.log.levels.WARN)
+  end
+end, { desc = 'Run holb_check.sh on current C file' })
+
+-- Keymap to run holb check
+vim.keymap.set('n', '<leader>hc', ':Holb<CR>', { desc = 'Run holb_check.sh' })
+
+-- Format files on leaving insert mode
+vim.api.nvim_create_autocmd('InsertLeave', {
+  group = vim.api.nvim_create_augroup('FormatOnNormal', { clear = true }),
+  pattern = { '*.c', '*.h', '*.cpp', '*.hpp', '*.cc', '*.rs', '*.py', '*.lua', '*.js', '*.ts', '*.jsx', '*.tsx', '*.svelte', '*.html', '*.css' },
+  callback = function()
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    local ft = vim.bo.filetype
+
+    if ft == 'c' or ft == 'cpp' then
+      vim.cmd('silent! %!clang-format')
+    elseif ft == 'rust' then
+      vim.cmd('silent! %!rustfmt')
+    elseif ft == 'python' then
+      vim.cmd('silent! %!ruff format -')
+    elseif ft == 'lua' then
+      vim.cmd('silent! %!stylua -')
+    elseif ft == 'javascript' or ft == 'typescript' or ft == 'javascriptreact' or ft == 'typescriptreact' then
+      vim.cmd('silent! %!prettier --parser typescript')
+    elseif ft == 'svelte' then
+      vim.cmd('silent! %!prettier --parser svelte')
+    elseif ft == 'html' then
+      vim.cmd('silent! %!prettier --parser html')
+    elseif ft == 'css' then
+      vim.cmd('silent! %!prettier --parser css')
+    end
+
+    vim.api.nvim_win_set_cursor(0, cursor)
+  end,
+})
