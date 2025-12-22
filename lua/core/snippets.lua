@@ -86,27 +86,50 @@ vim.api.nvim_create_autocmd('InsertLeave', {
   group = vim.api.nvim_create_augroup('FormatOnNormal', { clear = true }),
   pattern = { '*.c', '*.h', '*.cpp', '*.hpp', '*.cc', '*.rs', '*.py', '*.lua', '*.js', '*.ts', '*.jsx', '*.tsx', '*.svelte', '*.html', '*.css' },
   callback = function()
-    local cursor = vim.api.nvim_win_get_cursor(0)
-    local ft = vim.bo.filetype
+    -- Defer formatting to avoid conflicts with LSP requests
+    vim.defer_fn(function()
+      -- Skip if we're no longer in normal mode or buffer changed
+      if vim.fn.mode() ~= 'n' then
+        return
+      end
 
-    if ft == 'c' or ft == 'cpp' then
-      vim.cmd('silent! %!clang-format')
-    elseif ft == 'rust' then
-      vim.cmd('silent! %!rustfmt')
-    elseif ft == 'python' then
-      vim.cmd('silent! %!ruff format -')
-    elseif ft == 'lua' then
-      vim.cmd('silent! %!stylua -')
-    elseif ft == 'javascript' or ft == 'typescript' or ft == 'javascriptreact' or ft == 'typescriptreact' then
-      vim.cmd('silent! %!prettier --parser typescript')
-    elseif ft == 'svelte' then
-      vim.cmd('silent! %!prettier --parser svelte')
-    elseif ft == 'html' then
-      vim.cmd('silent! %!prettier --parser html')
-    elseif ft == 'css' then
-      vim.cmd('silent! %!prettier --parser css')
-    end
+      local cursor = vim.api.nvim_win_get_cursor(0)
+      local ft = vim.bo.filetype
 
-    vim.api.nvim_win_set_cursor(0, cursor)
+      -- Save buffer content to restore on formatter failure
+      local original_lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+
+      if ft == 'c' or ft == 'cpp' then
+        vim.cmd('silent! %!clang-format')
+      elseif ft == 'rust' then
+        vim.cmd('silent! %!rustfmt')
+      elseif ft == 'python' then
+        vim.cmd('silent! %!autopep8 -')
+      elseif ft == 'lua' then
+        vim.cmd('silent! %!stylua -')
+      elseif ft == 'javascript' or ft == 'typescript' or ft == 'javascriptreact' or ft == 'typescriptreact' then
+        vim.cmd('silent! %!prettier --parser typescript')
+      elseif ft == 'svelte' then
+        vim.cmd('silent! %!prettier --parser svelte')
+      elseif ft == 'html' then
+        vim.cmd('silent! %!prettier --parser html')
+      elseif ft == 'css' then
+        vim.cmd('silent! %!prettier --parser css')
+      end
+
+      -- If formatter failed (v:shell_error ~= 0), restore original content
+      if vim.v.shell_error ~= 0 then
+        vim.api.nvim_buf_set_lines(0, 0, -1, false, original_lines)
+        vim.api.nvim_win_set_cursor(0, cursor)
+        return
+      end
+
+      -- Clamp cursor to valid buffer bounds after formatting
+      local line_count = vim.api.nvim_buf_line_count(0)
+      local row = math.min(cursor[1], line_count)
+      local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1] or ''
+      local col = math.min(cursor[2], #line)
+      vim.api.nvim_win_set_cursor(0, { row, col })
+    end, 50)
   end,
 })

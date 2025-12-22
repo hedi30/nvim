@@ -23,11 +23,9 @@ require('lazy').setup({
   require 'plugins.treesitter',
   require 'plugins.lsp',
   require 'plugins.lazygit',
-  require 'plugins.comment',
   require 'plugins.misc',
   require 'plugins.oil',
   require 'plugins.conform',
-  require 'plugins.persistence',
 }, {
   ui = {
     -- If you have a Nerd Font, set icons to an empty table which will use the
