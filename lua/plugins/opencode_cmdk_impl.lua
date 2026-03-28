@@ -1,8 +1,8 @@
 local M = {}
 
 local api = vim.api
-local ns = api.nvim_create_namespace('copilot_cmdk')
-local state_path = vim.fn.stdpath('state') .. '/copilot_cmdk.json'
+local ns = api.nvim_create_namespace('opencode_cmdk')
+local state_path = vim.fn.stdpath('state') .. '/opencode_cmdk.json'
 local scope_node_patterns = {
   'function',
   'method',
@@ -67,6 +67,7 @@ local keyword_blocklist = {
 
 local state = {
   model = nil,
+  variant = nil,
 }
 
 local function normalize_model(model)
@@ -81,9 +82,17 @@ local function normalize_model(model)
   return 'openai/' .. model
 end
 
+local function normalize_variant(variant)
+  if type(variant) ~= 'string' or variant == '' then
+    return nil
+  end
+
+  return variant
+end
+
 local function notify(msg, level)
   vim.schedule(function()
-    vim.notify(msg, level or vim.log.levels.INFO, { title = 'Copilot Cmd-K' })
+    vim.notify(msg, level or vim.log.levels.INFO, { title = 'OpenCode Cmd-K' })
   end)
 end
 
@@ -108,22 +117,83 @@ end
 
 local function load_state()
   local saved = read_json(state_path)
-  if type(saved) == 'table' and type(saved.model) == 'string' and saved.model ~= '' then
-    state.model = normalize_model(saved.model)
+  if type(saved) == 'table' then
+    if type(saved.model) == 'string' and saved.model ~= '' then
+      state.model = normalize_model(saved.model)
+    end
+    if type(saved.variant) == 'string' and saved.variant ~= '' then
+      state.variant = normalize_variant(saved.variant)
+    end
   end
 end
 
 local function save_state()
   local model = normalize_model(state.model)
+  local variant = normalize_variant(state.variant)
   if model == nil then
     write_json(state_path, {})
     return
   end
-  write_json(state_path, { model = model })
+  write_json(state_path, { model = model, variant = variant })
 end
 
 local function active_model_label()
-  return normalize_model(state.model) or 'opencode default'
+  local model = normalize_model(state.model)
+  local variant = normalize_variant(state.variant)
+  if not model then
+    return 'opencode default'
+  end
+  if variant then
+    return model .. ' [' .. variant .. ']'
+  end
+  return model
+end
+
+local function parse_verbose_models(output)
+  local entries = {}
+  local lines = vim.split(output or '', '\n', { plain = true })
+  local i = 1
+
+  while i <= #lines do
+    local header = vim.trim(lines[i])
+    if header ~= '' and header:find('/', 1, true) and not header:match('^%{') then
+      local json_lines = {}
+      i = i + 1
+      local balance = 0
+      local started = false
+
+      while i <= #lines do
+        local line = lines[i]
+        if not started and vim.trim(line) == '' then
+          i = i + 1
+        else
+          started = true
+          table.insert(json_lines, line)
+          local opens = select(2, line:gsub('{', ''))
+          local closes = select(2, line:gsub('}', ''))
+          balance = balance + opens - closes
+          i = i + 1
+          if balance == 0 and #json_lines > 0 then
+            break
+          end
+        end
+      end
+
+      local ok, decoded = pcall(vim.json.decode, table.concat(json_lines, '\n'))
+      if ok and type(decoded) == 'table' then
+        decoded.full_id = header
+        table.insert(entries, decoded)
+      end
+    else
+      i = i + 1
+    end
+  end
+
+  return entries
+end
+
+local function current_choice_matches(model, variant)
+  return normalize_model(state.model) == normalize_model(model) and normalize_variant(state.variant) == normalize_variant(variant)
 end
 
 local function health_lines()
@@ -180,7 +250,7 @@ function M.healthcheck()
     return
   end
 
-  health.start('Copilot Cmd-K')
+  health.start('OpenCode Cmd-K')
   for _, item in ipairs(health_lines()) do
     if item[2] == vim.log.levels.ERROR then
       health.error(item[1])
@@ -564,7 +634,8 @@ local function get_visual_range()
 end
 
 local function prompt_user()
-  local ok, input = pcall(vim.fn.input, 'Copilot Edit: ')
+  local ok, input = pcall(vim.fn.input, 'OpenCode Edit: ')
+  vim.cmd('redraw')
   if not ok then
     return nil
   end
@@ -610,32 +681,38 @@ local function run_request(opts)
       table.insert(args, model)
     end
 
+    local variant = normalize_variant(state.variant)
+    if variant then
+      table.insert(args, '--variant')
+      table.insert(args, variant)
+    end
+
     vim.system(args, { text = true, cwd = current_workdir(opts.bufnr) }, function(obj)
       vim.schedule(function()
-      clear_status(opts.bufnr)
+        clear_status(opts.bufnr)
 
-      if obj.code ~= 0 then
-        local message = (obj.stderr and vim.trim(obj.stderr) ~= '' and vim.trim(obj.stderr))
-          or (obj.stdout and vim.trim(obj.stdout) ~= '' and vim.trim(obj.stdout))
-          or 'opencode request failed'
-        notify(message, vim.log.levels.ERROR)
-        return
-      end
+        if obj.code ~= 0 then
+          local message = (obj.stderr and vim.trim(obj.stderr) ~= '' and vim.trim(obj.stderr))
+            or (obj.stdout and vim.trim(obj.stdout) ~= '' and vim.trim(obj.stdout))
+            or 'opencode request failed'
+          notify(message, vim.log.levels.ERROR)
+          return
+        end
 
-      local text = extract_opencode_text(obj.stdout)
-      if not text or vim.trim(text) == '' then
-        notify('opencode returned no code', vim.log.levels.WARN)
-        return
-      end
+        local text = extract_opencode_text(obj.stdout)
+        if not text or vim.trim(text) == '' then
+          notify('opencode returned no code', vim.log.levels.WARN)
+          return
+        end
 
-      local cleaned = trim_fences(text)
-      local lines = vim.split(cleaned, '\n', { plain = true })
+        local cleaned = trim_fences(text)
+        local lines = vim.split(cleaned, '\n', { plain = true })
 
-      if opts.kind == 'visual' then
-        replace_range(opts.bufnr, opts.line1, opts.line2, lines)
-      else
-        insert_at(opts.bufnr, opts.line1, lines, opts.replace_blank)
-      end
+        if opts.kind == 'visual' then
+          replace_range(opts.bufnr, opts.line1, opts.line2, lines)
+        else
+          insert_at(opts.bufnr, opts.line1, lines, opts.replace_blank)
+        end
       end)
     end)
   end)
@@ -808,7 +885,7 @@ function M.pick_model()
       return
     end
 
-    vim.system({ bin, 'models' }, { text = true }, function(obj)
+    vim.system({ bin, 'models', '--verbose' }, { text = true }, function(obj)
       vim.schedule(function()
         if obj.code ~= 0 then
           local message = (obj.stderr and vim.trim(obj.stderr) ~= '' and vim.trim(obj.stderr)) or 'Failed to fetch opencode models'
@@ -816,11 +893,24 @@ function M.pick_model()
           return
         end
 
+        local verbose_models = parse_verbose_models(obj.stdout)
         local models = {}
-        for line in (obj.stdout or ''):gmatch('[^\r\n]+') do
-          line = vim.trim(line)
-          if line ~= '' then
-            table.insert(models, { id = line, label = line })
+        for _, item in ipairs(verbose_models) do
+          local full_id = item.full_id
+          local variants = type(item.variants) == 'table' and item.variants or {}
+
+          table.insert(models, {
+            id = full_id,
+            variant = nil,
+            label = full_id .. ' [default]',
+          })
+
+          for variant_name, _ in pairs(variants) do
+            table.insert(models, {
+              id = full_id,
+              variant = variant_name,
+              label = full_id .. ' [' .. variant_name .. ']',
+            })
           end
         end
 
@@ -836,7 +926,7 @@ function M.pick_model()
         vim.ui.select(models, {
           prompt = 'OpenCode Model',
           format_item = function(item)
-            if item.id == state.model then
+            if current_choice_matches(item.id, item.variant) then
               return item.label .. ' [current]'
             end
             return item.label
@@ -847,8 +937,9 @@ function M.pick_model()
           end
 
           state.model = choice.id
+          state.variant = choice.variant
           save_state()
-          notify('Model set to ' .. choice.id)
+          notify('Model set to ' .. active_model_label())
         end)
       end)
     end)
@@ -863,7 +954,7 @@ function M.setup()
   vim.keymap.set('n', '<leader>km', M.pick_model, { noremap = true, silent = true })
   vim.api.nvim_create_user_command('CmdKHealth', function()
     M.healthcheck()
-  end, { desc = 'Check Copilot Cmd-K health' })
+  end, { desc = 'Check OpenCode Cmd-K health' })
 end
 
 return M

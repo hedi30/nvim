@@ -25,7 +25,7 @@ require('lazy').setup({
   require 'plugins.oil',
   require 'plugins.conform',
   require 'plugins.neoscroll',
-  require 'plugins.copilot_cmdk',
+  require 'plugins.opencode_cmdk',
 }, {
   ui = {
     icons = vim.g.have_nerd_font and {} or {
