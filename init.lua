@@ -22,7 +22,7 @@ require('lazy').setup({
   require 'plugins.treesitter',
   require 'plugins.lsp',
   require 'plugins.lazygit',
-  require 'plugins.oil',
+  require 'plugins.neo-tree',
   require 'plugins.conform',
   require 'plugins.neoscroll',
   require 'plugins.opencode_cmdk',
