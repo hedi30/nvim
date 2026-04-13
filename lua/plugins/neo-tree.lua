@@ -31,6 +31,13 @@ return {
       },
     })
 
-    vim.keymap.set('n', '\\', '<cmd>Neotree focus filesystem reveal right<cr>', { desc = 'Focus File Explorer' })
+    vim.keymap.set('n', '\\', function()
+      require('neo-tree.command').execute({
+        action = 'focus',
+        source = 'filesystem',
+        position = 'right',
+        dir = vim.fn.getcwd(),
+      })
+    end, { desc = 'Focus File Explorer' })
   end,
 }
