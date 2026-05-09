@@ -25,7 +25,7 @@ require('lazy').setup({
   require 'plugins.neo-tree',
   require 'plugins.conform',
   require 'plugins.neoscroll',
-  require 'plugins.opencode_cmdk',
+  require 'plugins.pi_cmdk',
 }, {
   ui = {
     icons = vim.g.have_nerd_font and {} or {
