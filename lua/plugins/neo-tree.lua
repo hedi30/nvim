@@ -33,11 +33,11 @@ return {
 
     vim.keymap.set('n', '\\', function()
       require('neo-tree.command').execute({
-        action = 'focus',
+        action = 'toggle',
         source = 'filesystem',
         position = 'right',
         dir = vim.fn.getcwd(),
       })
-    end, { desc = 'Focus File Explorer' })
+    end, { desc = 'Toggle File Explorer' })
   end,
 }
