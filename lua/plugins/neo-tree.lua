@@ -33,7 +33,8 @@ return {
 
     vim.keymap.set('n', '\\', function()
       require('neo-tree.command').execute({
-        action = 'toggle',
+        action = 'focus',
+        toggle = true,
         source = 'filesystem',
         position = 'right',
         dir = vim.fn.getcwd(),
