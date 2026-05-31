@@ -20,6 +20,7 @@ require('lazy').setup({
   require 'plugins.themes.vscode',
   require 'plugins.telescope',
   require 'plugins.treesitter',
+  require 'plugins.svelte',
   require 'plugins.lsp',
   require 'plugins.lazygit',
   require 'plugins.neo-tree',
