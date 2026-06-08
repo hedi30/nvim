@@ -24,6 +24,8 @@ return {
       '%.git/',
       '%.venv/',
       '%.pi/',
+      'package%-lock%.json',
+      '%.md$',
     }
 
     require('telescope').setup {
@@ -70,6 +72,12 @@ return {
 
               '--glob',
               '!**/node_modules/**',
+
+              '--glob',
+              '!**/package-lock.json',
+
+              '--glob',
+              '!**/*.md',
             }
           end,
         },
