@@ -19,6 +19,13 @@ return {
     local actions = require 'telescope.actions'
     local builtin = require 'telescope.builtin'
 
+    local ignore_patterns = {
+      'node_modules',
+      '%.git/',
+      '%.venv/',
+      '%.pi/',
+    }
+
     require('telescope').setup {
       defaults = {
         layout_strategy = 'center',
@@ -34,22 +41,37 @@ return {
             ['q'] = actions.close,
           },
         },
+        path_display = {
+          filename_first = {
+            reverse_directories = true,
+          },
+        },
       },
       pickers = {
         find_files = {
-          file_ignore_patterns = { 'node_modules', '.git', '.venv' },
+          file_ignore_patterns = ignore_patterns,
           hidden = true,
         },
         live_grep = {
-          file_ignore_patterns = { 'node_modules', '.git', '.venv' },
+          file_ignore_patterns = ignore_patterns,
           additional_args = function(_)
-            return { '--hidden', '--sort=path' }
+            return {
+              '--hidden',
+              '--sort=path',
+
+              '--glob',
+              '!**/.git/**',
+
+              '--glob',
+              '!**/.venv/**',
+
+              '--glob',
+              '!**/.pi/**',
+
+              '--glob',
+              '!**/node_modules/**',
+            }
           end,
-        },
-      },
-      path_display = {
-        filename_first = {
-          reverse_directories = true,
         },
       },
       extensions = {
