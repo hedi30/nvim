@@ -15,6 +15,12 @@ return {
 
         -- Go to definition
         map('gd', require('telescope.builtin').lsp_definitions, 'Goto Definition')
+        -- Hover documentation (shows signature + return type)
+        map('K', vim.lsp.buf.hover, 'Hover Documentation')
+        -- Find references
+        map('gr', require('telescope.builtin').lsp_references, 'Goto References')
+        -- Go to implementation
+        map('gI', require('telescope.builtin').lsp_implementations, 'Goto Implementation')
       end,
     })
 
