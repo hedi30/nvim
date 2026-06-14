@@ -19,6 +19,7 @@ return {
     })
 
     local capabilities = vim.lsp.protocol.make_client_capabilities()
+    capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
 
     local servers = {
       lua_ls = {
@@ -65,5 +66,17 @@ return {
       vim.lsp.config(server, cfg)
       vim.lsp.enable(server)
     end
+
+    -- Configure how diagnostics are displayed
+    vim.diagnostic.config {
+      virtual_text = {
+        prefix = '●',
+        source = 'if_many',
+      },
+      signs = true,
+      underline = true,
+      update_in_insert = false,
+      severity_sort = true,
+    }
   end,
 }

@@ -16,12 +16,13 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-require('lazy').setup({
+  require('lazy').setup({
   require 'plugins.themes.vscode',
   require 'plugins.telescope',
   require 'plugins.treesitter',
   require 'plugins.svelte',
   require 'plugins.lsp',
+  require 'plugins.cmp',
   require 'plugins.lazygit',
   require 'plugins.neo-tree',
   require 'plugins.conform',

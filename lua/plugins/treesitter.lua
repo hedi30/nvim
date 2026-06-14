@@ -34,6 +34,7 @@ return {
         'html',
         'c',
         'svelte',
+        'rust',
       },
       highlight = {
         enable = true,
