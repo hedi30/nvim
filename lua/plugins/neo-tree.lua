@@ -32,12 +32,15 @@ return {
     })
 
     vim.keymap.set('n', '\\', function()
+      local reveal = vim.bo.buftype == '' and vim.api.nvim_buf_get_name(0) ~= ''
+
       require('neo-tree.command').execute({
         action = 'focus',
         toggle = true,
         source = 'filesystem',
         position = 'right',
         dir = vim.fn.getcwd(),
+        reveal = reveal,
       })
     end, { desc = 'Toggle File Explorer' })
   end,
