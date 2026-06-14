@@ -44,7 +44,25 @@ return {
       },
     },
     config = function(_, opts)
-      require('nvim-treesitter.configs').setup(opts)
+      local ok, configs = pcall(require, 'nvim-treesitter.configs')
+      if ok then
+        configs.setup(opts)
+      else
+        local disabled = {}
+        for _, filetype in ipairs(opts.highlight.disable or {}) do
+          disabled[filetype] = true
+        end
+
+        vim.api.nvim_create_autocmd('FileType', {
+          callback = function(event)
+            if disabled[vim.bo[event.buf].filetype] then
+              return
+            end
+
+            pcall(vim.treesitter.start, event.buf)
+          end,
+        })
+      end
 
       vim.filetype.add { extension = { tf = 'terraform' } }
       vim.filetype.add { extension = { tfvars = 'terraform' } }
