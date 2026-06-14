@@ -1,25 +1,7 @@
--- Custom code snippets for different purposes
+-- Autocmds and UI helpers
 
 -- Prevent LSP from overwriting treesitter color settings
 vim.hl.priorities.semantic_tokens = 95
-
--- Appearance of diagnostics
-vim.diagnostic.config {
-  virtual_text = false,
-  underline = false,
-  update_in_insert = false,
-  float = {
-    source = true,
-  },
-  signs = {
-    text = {
-      [vim.diagnostic.severity.ERROR] = ' ',
-      [vim.diagnostic.severity.WARN] = ' ',
-      [vim.diagnostic.severity.INFO] = ' ',
-      [vim.diagnostic.severity.HINT] = '󰌵 ',
-    },
-  },
-}
 
 -- Highlight on yank
 local highlight_group = vim.api.nvim_create_augroup('YankHighlight', { clear = true })
@@ -65,5 +47,3 @@ vim.api.nvim_create_autocmd('ColorScheme', {
     end, 10)
   end,
 })
-
-

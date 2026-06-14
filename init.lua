@@ -1,10 +1,10 @@
 require 'core.options' -- Load general options
 require 'core.keymaps' -- Load general keymaps
-require 'core.snippets' -- Custom code snippets
+require 'core.autocmds' -- Load autocmds and UI helpers
 
 -- Install package manager
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
-if not vim.loop.fs_stat(lazypath) then
+if not vim.uv.fs_stat(lazypath) then
   vim.fn.system {
     'git',
     'clone',
@@ -16,7 +16,7 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
-  require('lazy').setup({
+require('lazy').setup({
   require 'plugins.themes.vscode',
   require 'plugins.telescope',
   require 'plugins.treesitter',
@@ -27,7 +27,6 @@ vim.opt.rtp:prepend(lazypath)
   require 'plugins.neo-tree',
   require 'plugins.conform',
   require 'plugins.neoscroll',
-  require 'plugins.pi_cmdk',
 }, {
   ui = {
     icons = vim.g.have_nerd_font and {} or {

@@ -1,7 +1,6 @@
 return {
   {
     'nvim-treesitter/nvim-treesitter',
-    'neovim-treesitter/treesitter-parser-registry',
     lazy = false,
     build = ':TSUpdate',
     opts = {
@@ -20,7 +19,6 @@ return {
         'json',
         'java',
         'groovy',
-        'go',
         'gitignore',
         'graphql',
         'yaml',
