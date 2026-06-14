@@ -16,7 +16,20 @@ return {
         -- Go to definition
         map('gd', require('telescope.builtin').lsp_definitions, 'Goto Definition')
         -- Hover documentation (shows signature + return type)
-        map('K', vim.lsp.buf.hover, 'Hover Documentation')
+        map('K', function()
+          vim.lsp.buf.hover()
+          vim.schedule(function()
+            for _, win in ipairs(vim.api.nvim_list_wins()) do
+              local ok, config = pcall(vim.api.nvim_win_get_config, win)
+              if ok and config.relative ~= '' then
+                local bufnr = vim.api.nvim_win_get_buf(win)
+                if vim.bo[bufnr].filetype == 'markdown' then
+                  pcall(vim.treesitter.stop, bufnr)
+                end
+              end
+            end
+          end)
+        end, 'Hover Documentation')
         -- Find references
         map('gr', require('telescope.builtin').lsp_references, 'Goto References')
         -- Go to implementation
